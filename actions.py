@@ -1,15 +1,15 @@
-import configparser
+import ConfigParser
 import os
 import shutil
 import fnmatch
 import time
-from ltk import exceptions
-from ltk.apicalls import ApiCalls
-from ltk.utils import detect_format
-from ltk.managers import DocumentManager
-from ltk.constants import CONF_DIR, CONF_FN, SYSTEM_FILE
+import exceptions
+from apicalls import ApiCalls
+from utils import detect_format
+from managers import DocumentManager
+from constants import CONF_DIR, CONF_FN, SYSTEM_FILE
 
-from ltk.logger import logger
+from logger import logger
 
 
 class Action:
@@ -42,7 +42,7 @@ class Action:
 
     def _initialize_self(self):
         config_file_name = os.path.join(self.path, CONF_DIR, CONF_FN)
-        conf_parser = configparser.ConfigParser()
+        conf_parser = ConfigParser.ConfigParser()
         conf_parser.read(config_file_name)
         self.host = conf_parser.get('main', 'host')
         self.access_token = conf_parser.get('main', 'access_token')
@@ -57,7 +57,7 @@ class Action:
             self.watch_dir = conf_parser.get('main', 'watch_folder')
             watch_locales = conf_parser.get('main', 'watch_locales')
             self.watch_locales = set(watch_locales.split(','))
-        except configparser.NoOptionError:
+        except ConfigParser.NoOptionError:
             if not self.project_name:
                 self.api = ApiCalls(self.host, self.access_token)
                 project_info = self.api.get_project_info(self.community_id)
@@ -89,14 +89,14 @@ class Action:
 
     def init_config_file(self):
         config_file_name = os.path.join(self.path, CONF_DIR, CONF_FN)
-        conf_parser = configparser.ConfigParser()
+        conf_parser = ConfigParser.ConfigParser()
         conf_parser.read(config_file_name)
         return config_file_name, conf_parser
 
     def update_config_file(self, option, value, conf_parser, config_file_name, log_info):
         conf_parser.set('main', option, value)
-        with open(config_file_name, 'w') as new_file:
-            conf_parser.write(new_file )
+        with open(config_file_name, 'wb') as new_file:
+            conf_parser.write(new_file)
         # self._initialize_self()
         logger.info(log_info)
 
@@ -131,10 +131,10 @@ class Action:
             target_locales = ','.join(target for target in target_locales)
             self.update_config_file('watch_locales', target_locales, conf_parser, config_file_name, log_info)
 
-        print ('host: {0}\naccess_token: {1}\nproject id: {2}\nproject name: {6}\ncommunity id: {3}\nworkflow id: {4}\n' \
+        print 'host: {0}\naccess_token: {1}\nproject id: {2}\nproject name: {6}\ncommunity id: {3}\nworkflow id: {4}\n' \
               'locale: {5}\ndownloads folder: {7}\nwatch folder: {8}\nwatch target locales: {9}'.format(
             self.host, self.access_token, self.project_id, self.community_id, self.workflow_id, self.locale,
-            self.project_name, self.download_dir, self.watch_dir, ', '.join(x for x in self.watch_locales)))
+            self.project_name, self.download_dir, self.watch_dir, ', '.join(x for x in self.watch_locales))
 
     def add_document(self, locale, file_name, title, **kwargs):
         response = self.api.add_document(file_name, locale, self.project_id, title, **kwargs)
@@ -159,12 +159,9 @@ class Action:
             relative_path = file_name.replace(self.path, '')
             if not self.doc_manager.is_doc_new(relative_path):
                 if self.doc_manager.is_doc_modified(relative_path, self.path):
-                    if 'force' in kwargs and kwargs['force']:
-                        confirm = 'Y'
-                    else:
-                        confirm = 'not confirmed'
+                    confirm = 'not confirmed'
                     while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-                        confirm = input("This document already exists. Would you like to overwrite it? [y/N]: ")
+                        confirm = raw_input("This document already exists. Would you like to overwrite it? [y/N]: ")
                     # confirm if would like to overwrite existing document in Lingotek Cloud
                     if not confirm or confirm in ['n', 'N']:
                         continue
@@ -190,7 +187,6 @@ class Action:
         for entry in entries:
             if not self.doc_manager.is_doc_modified(entry['file_name'], self.path):
                 continue
-            #print (entry['file_name'])
             response = self.api.document_update(entry['id'], os.path.join(self.path, entry['file_name']))
             if response.status_code != 202:
                 raise_error(response.json(), "Failed to update document {0}".format(entry['name']), True)
@@ -198,17 +194,17 @@ class Action:
             logger.info('Updated ' + entry['name'])
             self._update_document(entry['file_name'])
         if not updated:
-            print('All documents up-to-date with Lingotek Cloud. ')
             logger.info('All documents up-to-date with Lingotek Cloud. ')
 
     def update_document_action(self, file_name, title=None, **kwargs):
+        print "updating document action.."
+        print file_name
         relative_path = file_name.replace(self.path, '')
         entry = self.doc_manager.get_doc_by_prop('file_name', relative_path)
         try:
             document_id = entry['id']
         except TypeError:
             logger.error("Document name specified doesn't exist: {0}".format(title))
-            print (file_name, entry['prolerty'])
             return
         if title:
             response = self.api.document_update(document_id, file_name, title=title, **kwargs)
@@ -217,7 +213,6 @@ class Action:
         if response.status_code != 202:
             raise_error(response.json(), "Failed to update document {0}".format(file_name), True)
         self._update_document(relative_path)
-      
 
     def _target_action_db(self, to_delete, locales, document_id):
         if to_delete:
@@ -300,13 +295,13 @@ class Action:
                 except KeyError:
                     locales.append(['none'])
         if not ids:
-            print ('no documents')
+            print 'no documents'
             return
-        print ('documents: id, title, locales')
+        print 'documents: id, title, locales'
         for i in range(len(ids)):
             info = '{id} \t {title} \t\t {locales}'.format(id=ids[i], title=titles[i],
                                                            locales=', '.join(locale for locale in locales[i]))
-            print (info)
+            print info
 
     def list_workflow_action(self):
         response = self.api.list_workflows(self.community_id)
@@ -314,12 +309,12 @@ class Action:
             raise_error(response.json(), "Failed to list workflows")
         ids, titles = log_id_names(response.json())
         if not ids:
-            print ('no workflows')
+            print 'no workflows'
             return
-        print ('workflows: id, title')
+        print 'workflows: id, title'
         for i in range(len(ids)):
             info = '{id} \t {title}'.format(id=ids[i], title=titles[i])
-            print (info)
+            print info
 
     def list_locale_action(self):
         locale_info = []
@@ -334,27 +329,27 @@ class Action:
             locale_info.append((locale_code, language, country))
         for locale in sorted(locale_info):
             if not len(locale[2]):  # Arabic
-                print ("{0} ({1})".format(locale[0], locale[1]))
+                print "{0} ({1})".format(locale[0], locale[1])
             else:
-                print ("{0} ({1}, {2})".format(locale[0], locale[1], locale[2]))
+                print "{0} ({1}, {2})".format(locale[0], locale[1], locale[2])
 
     def list_format_action(self):
         format_mapper = detect_format(None, True)
-        print ("Formats Lingotek supports:")
-        for format_name in sorted(set(format_mapper.values())):
-            print (format_name)
+        print 'Formats Lingotek supports:'
+        for format_name in sorted(set(format_mapper.itervalues())):
+            print format_name
 
     def list_filter_action(self):
         response = self.api.list_filters()
         if response.status_code != 200:
             raise_error(response.json(), 'Failed to get filters')
         filter_entities = response.json()['entities']
-        print (bytes('filters: id, title', 'UTF-8'))
+        print 'filters: id, title'
         for entry in filter_entities:
             properties = entry['properties']
             title = properties['title']
             filter_id = properties['id']
-            print ('{0}\t{1}\t'.format(filter_id, title))
+            print '{0}\t{1}\t'.format(filter_id, title)
 
     def status_action(self, detailed, document_name=None):
         if document_name is not None:
@@ -373,7 +368,7 @@ class Action:
             else:
                 title = response.json()['properties']['title']
                 progress = response.json()['properties']['progress']
-                print ('{0}: {1}%'.format(title, progress))
+                print '{0}: {1}%'.format(title, progress)
                 # print title + ': ' + str(progress) + '%'
                 # for each doc id, also call /document/id/translation and get % of each locale
             if detailed:
@@ -384,7 +379,7 @@ class Action:
                     for entry in response.json()['entities']:
                         curr_locale = entry['properties']['locale_code']
                         curr_progress = entry['properties']['percent_complete']
-                        print ('\tlocale: {0} \t percent complete: {1}%'.format(curr_locale, curr_progress))
+                        print '\tlocale: {0} \t percent complete: {1}%'.format(curr_locale, curr_progress)
                         # detailed_status[doc_id] = (curr_locale, curr_progress)
                 except KeyError:
                     continue
@@ -465,21 +460,18 @@ class Action:
     def rm_action(self, document_name, force):
         try:
             entry = self.doc_manager.get_doc_by_prop('name', document_name)
-            #print ('entry :', entry)
             document_id = entry['id']
-            #print ('id:', document_id)
-        except TypeError:            
-            logger.warning("Document name specified doesn't exist: {0}".format(document_name))
+        except TypeError:
+            logger.warn("Document name specified doesn't exist: {0}".format(document_name))
             return
             # raise exceptions.ResourceNotFound("Document name specified doesn't exist: {0}".format(document_name))
         response = self.api.document_delete(document_id)
-        #print (response)
-        if response.status_code != 204:            
+        if response.status_code != 204:
             # raise_error(response.json(), "Failed to delete document {0}".format(document_name), True)
             logger.error("Failed to delete document {0}".format(document_name))
         else:
             logger.info("{0} has been deleted remotely.".format(document_name))
-            if force:                
+            if force:
                 self.delete_local(document_name, document_id)
             self.doc_manager.remove_element(document_id)
 
@@ -524,7 +516,7 @@ class Action:
                 document_id = entry['id']
                 self.doc_manager.remove_element(document_id)
             except TypeError:
-                logger.warning("Document name specified doesn't exist: {0}".format(document_name))
+                logger.warn("Document name specified doesn't exist: {0}".format(document_name))
             return
 
         response = self.api.list_documents(self.project_id)
@@ -562,12 +554,11 @@ class Action:
         logger.info('Cleaned up associations between local documents and Lingotek cloud')
 
     def delete_local(self, title, document_id, message=None):
-        #print('local delete:', title, document_id)
         message = 'Removed local file {0}'.format(title) if not message else message
-        file_name = self.doc_manager.get_doc_by_prop('id', document_id)['file_name']        
+        file_name = self.doc_manager.get_doc_by_prop('id', document_id)['file_name']
         try:
             os.remove(os.path.join(self.path, file_name))
-            logger.info(message)            
+            logger.info(message)
         except OSError:
             logger.info('Something went wrong trying to delete the local file.')
 
@@ -604,7 +595,7 @@ def reinit(host, project_path, delete, reset):
             return False
         confirm = 'not confirmed'
         while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-            confirm = input(
+            confirm = raw_input(
                 "Are you sure you want to delete the current project? "
                 "This will also delete the project in your community. [y/N]: ")
         # confirm if would like to delete existing folder
@@ -615,7 +606,7 @@ def reinit(host, project_path, delete, reset):
             logger.info('Deleting old project folder and creating new one...')
             config_file_name = os.path.join(project_path, CONF_DIR, CONF_FN)
             if os.path.isfile(config_file_name):
-                old_config = configparser.ConfigParser()
+                old_config = ConfigParser.ConfigParser()
                 old_config.read(config_file_name)
                 project_id = old_config.get('main', 'project_id')
                 access_token = old_config.get('main', 'access_token')
@@ -640,28 +631,26 @@ def choice_mapper(info):
     mapper = {}
     import operator
 
-    #sorted_info = sorted(info.iteritems(), key=operator.itemgetter(1))    
-    sorted_info = sorted(info.items(), key = operator.itemgetter(1))  
+    sorted_info = sorted(info.iteritems(), key=operator.itemgetter(1))
 
-    index = 0    
+    index = 0
     for entry in sorted_info:
         mapper[index] = {entry[0]: entry[1]}
         index += 1
-    for k,v in mapper.items():
-        for values in v:
-            print ('({0}) {1} ({2})'.format(k, v[values], values))
+    for k, v in mapper.iteritems():
+        print '({0}) {1} ({2})'.format(k, v.itervalues().next(), v.iterkeys().next())
     return mapper
 
 
 def get_import_ids(info):
     mapper = choice_mapper(info)
     chosen_indices = ['none-chosen']
-    while not set(chosen_indices) <= set(mapper.keys()):
-        choice = input('Which documents to import? (Separate indices by comma) ')
+    while not set(chosen_indices) <= set(mapper.iterkeys()):
+        choice = raw_input('Which documents to import? (Separate indices by comma) ')
         try:
             chosen_indices = map(int, choice.split(','))
         except ValueError:
-            print ('Some unexpected, non-integer value was included')
+            print 'Some unexpected, non-integer value was included'
     return [mapper[index].iterkeys().next() for index in chosen_indices]
 
 
@@ -674,15 +663,14 @@ def display_choice(display_type, info):
         raise exceptions.ResourceNotFound("Cannot display info asked for")
     mapper = choice_mapper(info)
     choice = 'none-chosen'
-    while choice not in mapper:
-        choice = input(input_prompt)
+    while choice not in mapper.iterkeys():
+        choice = raw_input(input_prompt)
         try:
             choice = int(choice)
         except ValueError:
             print("That's not a valid option!")
-    for v in mapper[choice]:
-        logger.info('Selected "{0}" {1}.'.format(mapper[choice][v], display_type))
-        return v, mapper[choice][v]
+    logger.info('Selected "{0}" {1}.'.format(mapper[choice].itervalues().next(), display_type))
+    return mapper[choice].iterkeys().next(), mapper[choice].itervalues().next()
 
 
 def check_global():
@@ -691,7 +679,7 @@ def check_global():
     sys_file = os.path.join(home_path, SYSTEM_FILE)
     if os.path.isfile(sys_file):
         # get the access token
-        conf_parser = configparser.ConfigParser()
+        conf_parser = ConfigParser.ConfigParser()
         conf_parser.read(sys_file)
         return conf_parser.get('main', 'access_token')
     else:
@@ -707,7 +695,7 @@ def create_global(access_token):
     file_name = os.path.join(home_path, SYSTEM_FILE)
     sys_file = open(file_name, 'w')
 
-    config_parser = configparser.ConfigParser()
+    config_parser = ConfigParser.ConfigParser()
     config_parser.add_section('main')
     config_parser.set('main', 'access_token', access_token)
     config_parser.write(sys_file)
@@ -747,7 +735,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     # create the config file and add info
     config_file = open(config_file_name, 'w')
 
-    config_parser = configparser.ConfigParser()
+    config_parser = ConfigParser.ConfigParser()
     config_parser.add_section('main')
     config_parser.set('main', 'access_token', access_token)
     config_parser.set('main', 'host', host)
@@ -756,16 +744,12 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     config_parser.set('main', 'default_locale', locale)
     # get community id
     community_info = api.get_communities_info()
-    #print("Community INFO")
-    #print(len(community_info))
     if len(community_info) == 0:
         raise exceptions.ResourceNotFound('You are not part of any communities in Lingotek Cloud')
     if len(community_info) > 1:
         community_id, community_name = display_choice('community', community_info)
     else:
-        for id in community_info:
-            community_id = id
-        #community_id = community_info.iterkeys().next()  --- iterkeys() is not in python 3
+        community_id = community_info.iterkeys().next()
     config_parser.set('main', 'community_id', community_id)
 
     response = api.list_projects(community_id)
@@ -775,7 +759,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     if len(project_info) > 0:
         confirm = 'none'
         while confirm != 'y' and confirm != 'Y' and confirm != 'N' and confirm != 'n' and confirm != '':
-            confirm = input('Would you like to use an existing Lingotek project? [y/N]:')
+            confirm = raw_input('Would you like to use an existing Lingotek project? [y/N]:')
         if confirm and confirm in ['y', 'Y', 'yes', 'Yes']:
             project_id, project_name = display_choice('project', project_info)
             config_parser.set('main', 'project_id', project_id)
@@ -783,7 +767,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
             config_parser.write(config_file)
             config_file.close()
             return
-    project_name = input("Please enter a new Lingotek project name: %s" % folder_name + chr(8) * len(folder_name))
+    project_name = raw_input("Please enter a new Lingotek project name: %s" % folder_name + chr(8) * len(folder_name))
     if not project_name:
         project_name = folder_name
     response = api.add_project(project_name, community_id, workflow_id)

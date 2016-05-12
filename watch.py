@@ -1,7 +1,7 @@
 import ctypes
 from ltk.actions import Action
-from ltk.logger import logger
-from ltk.utils import map_locale
+from logger import logger
+from utils import map_locale
 import time
 import requests
 from requests.exceptions import ConnectionError
@@ -126,8 +126,6 @@ class WatchAction(Action):
                     self.add_document(self.locale, file_path, title)
                 elif self.doc_manager.is_doc_modified(relative_path, self.path):
                     self.update_content(relative_path)
-                else:
-                    return
             except KeyboardInterrupt:
                 self.observer.stop()
             except ConnectionError:
@@ -145,7 +143,7 @@ class WatchAction(Action):
                     curr_locale = title.split(self.locale_delimiter)[-2]
                     fixed_locale = map_locale(curr_locale)
                     if fixed_locale:
-                        print ("fixed locale:", fixed_locale)
+                        print "fixed locale:", fixed_locale
                         # self.watch_locales.add(fixed_locale)
                         self.detected_locales[document_id] = fixed_locale
                     else:
@@ -184,16 +182,8 @@ class WatchAction(Action):
         # print "watching add target, watch queue:", self.watch_queue
         if document_id not in self.watch_queue:
             self.watch_queue.append(document_id)
-        # Only add target if doc exists on the cloud
         if self.check_remote_doc_exist(title, document_id):
             locales_to_add = self.get_watch_locales(document_id)
-            # if len(locales_to_add) == 1:
-            #     printStr = "Adding target "+locales_to_add[0]
-            # else:
-            #     printStr = "Adding targets "
-            #     for target in locales_to_add:
-            #         printStr += target+","
-            # print(printStr)
             self.target_action(title, locales_to_add, None, None, None, document_id)
             self.watch_queue.remove(document_id)
 
@@ -226,8 +216,7 @@ class WatchAction(Action):
             except KeyError:
                 downloaded = []
                 self.doc_manager.update_document('downloaded', downloaded, doc_id)
-            for locale in locale_progress:
-                progress = locale_progress[locale]
+            for locale, progress in locale_progress.iteritems():
                 if progress == 100 and locale not in downloaded:
                     logger.info('Translation completed ({0} - {1})'.format(doc_id, locale))
                     if self.locale_delimiter:
@@ -237,7 +226,7 @@ class WatchAction(Action):
 
     def watch_action(self, watch_path, ignore, delimiter, timeout):
         # print self.path
-        # print("timeout: " + str(timeout))
+        print "timeout: ", timeout
         if not watch_path and not self.watch_dir:
             watch_path = self.path
         elif watch_path:
@@ -246,7 +235,7 @@ class WatchAction(Action):
             watch_path = self.watch_dir
         self.ignore_ext.extend(ignore)
         self.locale_delimiter = delimiter
-        print ("Watching for updates in: {0}".format(watch_path))
+        print "Watching for updates in: {0}".format(watch_path)
         try:
             self.observer.schedule(self.handler, path=watch_path, recursive=True)
             self.observer.start()

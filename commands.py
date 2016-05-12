@@ -1,14 +1,14 @@
 import click
-from ltk import actions
+import actions
 import os
-from ltk.exceptions import UninitializedError, ResourceNotFound, RequestFailedError, AlreadyExistsError
-from ltk.constants import LOG_FN, CONF_DIR
+from exceptions import UninitializedError, ResourceNotFound, RequestFailedError, AlreadyExistsError
+from constants import LOG_FN, CONF_DIR
 import logging
-from ltk.logger import logger, API_LOG_LEVEL, API_RESPONSE_LOG_LEVEL, CustomFormatter
+from logger import logger, API_LOG_LEVEL, API_RESPONSE_LOG_LEVEL, CustomFormatter
 import sys
 from ltk import __version__
-from ltk.watch import WatchAction
-from ltk.import_action import ImportAction
+from watch import WatchAction
+from import_action import ImportAction
 
 
 def abort_if_false(ctx, param, value):
@@ -53,7 +53,7 @@ def print_log(error):
     prints the error before logger is initialized
     """
     if not len(logger.handlers):
-        print ('Error: {0}'.format(error))
+        print 'Error: {0}'.format(error)
         sys.exit()
     return
 
@@ -141,7 +141,6 @@ def config(locale, workflow_id, download_folder, watch_folder, target_locales):
 @click.option('-fsi', '--fprm_subfilter_id', help='fprm subfilter id')
 @click.option('-v', '--vault_id', help='save-to TM vault id')
 @click.option('-e', '--external_url', help='source url')
-@click.option('-f', '--force', flag_value=True, help='overwrite previously added file if the file has been modified')
 def add(file_names, locale, **kwargs):
     """ adds content, could be one or multiple files specified by Unix shell pattern """
     try:
@@ -171,7 +170,7 @@ def push():
 @click.option('-n', '--doc_name', help='the name of the document, specify for one document')
 @click.option('-d', '--delete', 'to_delete', flag_value=True, help='deletes a specified target locale')
 @click.option('--due_date', help='the due date of the translation')
-@click.option('-w', '--workflow', help='the workflow of the translation (do "ltk list -w" to see available workflows)')
+@click.option('-w', '--workflow', help='the workflow of the translation')
 @click.argument('locales', required=True, nargs=-1)  # can have unlimited number of locales
 def request(doc_name, locales, to_delete, due_date, workflow):
     """ add targets to document(s) to start translation, defaults to entire project """
