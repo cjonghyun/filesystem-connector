@@ -3,9 +3,8 @@ import sys
 
 # from six.moves import BaseHTTPServer
 # from six.moves import urllib
-from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
-import urlparse
-import urllib
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import urllib.parse
 # import warnings
 #
 # with warnings.catch_warnings():
@@ -104,17 +103,17 @@ def run_oauth(host):
     client_id = 'ab33b8b9-4c01-43bd-a209-b59f933e4fc4'
     response_type = 'token'
     payload = {'client_id': client_id, 'redirect_uri': oauth_callback, 'response_type': response_type}
-    authorize_url = host + '/auth/authorize.html?' + urllib.urlencode(payload)
+    authorize_url = host + '/auth/authorize.html?' + urllib.parse.urlencode(payload)
     import webbrowser
     webbrowser.open_new(authorize_url)
-    print 'Your browser has been opened to visit: \n{0}\n'.format(authorize_url)
-    print '--------------------------------------'
+    print ('Your browser has been opened to visit: \n{0}\n'.format(authorize_url))
+    print ('--------------------------------------')
     httpd.handle_request()  # handle the GET redirect
     httpd.handle_request()  # handle the POST for token info
-    print '--------------------------------------\n'
+    print ('--------------------------------------\n')
     if 'access_token' in httpd.query_params:
-        print 'Access token has been successfully stored!'
-        print '(If you haven\'t already, you may close your browser.)\n'
+        print ('Access token has been successfully stored!')
+        print ('(If you haven\'t already, you may close your browser.)\n')
         init_token = httpd.query_params['access_token']
         token = init_token.split('&')[0]
         # store the token because apparently it doesn't expire..
