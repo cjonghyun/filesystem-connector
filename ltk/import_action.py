@@ -24,7 +24,7 @@ class ImportAction(Action):
                 ids_to_import = iter(tms_doc_info)
             else:
                 import_doc_info = {}
-                for k, v in tms_doc_info.iteritems():
+                for k, v in tms_doc_info.items():
                     import_doc_info[k] = v['title']
                 ids_to_import = get_import_ids(import_doc_info)
         else:
