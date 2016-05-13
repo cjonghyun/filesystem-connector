@@ -732,7 +732,7 @@ def init_action(host, access_token, project_path, folder_name, workflow_id, loca
     if not access_token:
         access_token = check_global()
         if not access_token or reset:
-            from auth import run_oauth
+            from ltk.auth import run_oauth
 
             access_token = run_oauth(host)
             ran_oauth = True
