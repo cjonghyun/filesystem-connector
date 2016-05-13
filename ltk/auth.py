@@ -70,7 +70,7 @@ class ClientRedirectHandler(BaseHTTPRequestHandler, object):
             Should only ever be sending self urlencoded so
         """
         length = int(self.headers['content-length'])
-        post_vars = urlparse.parse_qsl(self.rfile.read(length))
+        post_vars = urllib.parse.parse_qsl(self.rfile.read(length))
         self.server.query_params = dict(post_vars)
         self.send_response(200)
         self.send_header("Content-type", "text/html")
@@ -81,6 +81,7 @@ class ClientRedirectHandler(BaseHTTPRequestHandler, object):
 
 
 def run_oauth(host):
+    print ('running oauth')
     r_host = 'localhost'  # host to redirect to
     r_ports = [9000, 9001, 9002]
     httpd = None
@@ -111,10 +112,13 @@ def run_oauth(host):
     httpd.handle_request()  # handle the GET redirect
     httpd.handle_request()  # handle the POST for token info
     print ('--------------------------------------\n')
-    if 'access_token' in httpd.query_params:
+    if b'access_token' in httpd.query_params:
         print ('Access token has been successfully stored!')
         print ('(If you haven\'t already, you may close your browser.)\n')
-        init_token = httpd.query_params['access_token']
+        init_token = httpd.query_params[b'access_token']
+        init_token = init_token.decode("utf-8")
+        print('init token',init_token)
+
         token = init_token.split('&')[0]
         # store the token because apparently it doesn't expire..
         return token
