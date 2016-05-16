@@ -1,5 +1,5 @@
 from tests.test_actions import *
-import ltk.actions.Action
+from ltk.actions import Action
 from io import StringIO
 import unittest
 import time
